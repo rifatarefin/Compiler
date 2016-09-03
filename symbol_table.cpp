@@ -106,9 +106,24 @@ void SymbolTable::delete2 (int n,string s)
             {
                 arr[n]=temp->next;
                 free(temp);
+
+
             }
+            else
+            {
+                prev->next=temp->next;
+                if(tail[n]==temp)tail[n]= prev;
+                free(temp);
+            }
+            cout<<"Deleted from "<<n<<", "<<p<<"\n";
+            return;
+
         }
+        prev=temp;
+        temp=temp->next;
+        p++;
     }
+    cout<<s<<" not found\n";
 
 }
 
@@ -138,7 +153,9 @@ int main()
     SymbolTable obj(7);
     obj.insert (123%7,"123","NUMBER");
     obj.insert (123%7,"123","NUMBER");
-    obj.insert (119%7,"523","NUMBER");
+    obj.insert (123%7,"523","NUMBER");
+    obj.print (7);
+    obj.delete2 (123%7,"523");
     obj.print (7);
 
 
