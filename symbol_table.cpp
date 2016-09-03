@@ -3,12 +3,12 @@
 using namespace std;
 
 
-unsigned long hash(unsigned char *str)
+unsigned long hash2(string str)
 {
-    unsigned long hash = 5381;
-    int c;
+    unsigned long hash = 5381,c;
+    int i=0;
 
-    while ((c = *str++))
+    while ((c = str[i++]))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
     return hash;
@@ -27,7 +27,7 @@ class SymbolTable
 public:
     SymbolTable(int n);
     void insert(int n,string s,string ty);
-    int lookUp(int n,string s);
+    int lookUp(int n,string s, bool g);
     void delete2(int n,string s);
     void print(int size);
 
@@ -49,30 +49,30 @@ SymbolTable::SymbolTable(int n)
     }
 }
 
-int SymbolTable::lookUp (int n,string s)
+int SymbolTable::lookUp (int n,string s,bool g)
 {
     SymbolInfo *temp=arr[n];int p=0;
     while(temp!=0)
     {
         if(temp->name==s)
         {
-            //cout<<"found at position "<<n<<", "<<p<<"\n";
+            if(g)cout<<"<"<<s<<"," <<temp->type<<"> "<<"found at position "<<n<<", "<<p<<"\n\n";
             return -1;
         }
         temp=temp->next;
         p++;
     }
-    //cout<<"not found\n";
+    if(g)cout<< s<<ends<<"not found\n\n";
     return p;
 }
 
 void SymbolTable::insert (int n,string s,string ty)
 {
     SymbolInfo *newN;
-    int p=lookUp (n,s);
+    int p=lookUp (n,s,false);
     if(p==-1)
     {
-        cout<<"alredy exists\n";
+        cout<<"alredy exists\n\n";
         return;
     }
     newN=new SymbolInfo;
@@ -90,7 +90,7 @@ void SymbolTable::insert (int n,string s,string ty)
         tail[n]->next=newN;
         tail[n]=newN;
     }
-    cout<<"inserted at position "<<n<<","<<p<<"\n";
+    cout<<"inserted at position "<<n<<","<<p<<"\n\n";
 
 }
 
@@ -115,7 +115,7 @@ void SymbolTable::delete2 (int n,string s)
                 if(tail[n]==temp)tail[n]= prev;
                 free(temp);
             }
-            cout<<"Deleted from "<<n<<", "<<p<<"\n";
+            cout<<"Deleted from "<<n<<", "<<p<<"\n\n";
             return;
 
         }
@@ -123,7 +123,7 @@ void SymbolTable::delete2 (int n,string s)
         temp=temp->next;
         p++;
     }
-    cout<<s<<" not found\n";
+    cout<<s<<" not found\n\n";
 
 }
 
@@ -136,12 +136,13 @@ void SymbolTable::print (int size)
         temp=arr[i];
         while(temp!=0)
         {
-            cout<<" <"<<temp->name<<" : "<<temp->type<<">";
+            cout<<" < "<<temp->name<<" : "<<temp->type<<">";
             temp=temp->next;
         }
         cout<<"\n";
 
     }
+    cout<<"\n\n";
 }
 
 
@@ -149,14 +150,45 @@ void SymbolTable::print (int size)
 int main()
 {
     int n;
-    //cin>>n;
-    SymbolTable obj(7);
-    obj.insert (123%7,"123","NUMBER");
-    obj.insert (123%7,"123","NUMBER");
-    obj.insert (123%7,"523","NUMBER");
-    obj.print (7);
-    obj.delete2 (123%7,"523");
-    obj.print (7);
+    cin>>n;
+    SymbolTable obj(n);
+    string a,p,t;
+
+    while(true)
+    {
+        cin>>a;
+        if(a=="I")
+        {
+
+            cin>>p>>t;
+            int hs=(hash2 (p)%n);
+            cout<<"<"<<p<<","<<t<<"> ";
+            obj.insert (hs,p,t);
+
+
+        }
+        else if(a=="L")
+        {
+            cin>>p;
+            int hs=(hash2 (p)%n);
+            obj.lookUp (hs,p,true);
+
+        }
+        else if(a=="D")
+        {
+            cin>>p;
+            int hs=(hash2 (p)%n);
+            obj.delete2 (hs,p);
+
+        }
+        else if(a=="P")
+        {
+            obj.print (n);
+        }
+
+    }
+
+
 
 
 
