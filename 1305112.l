@@ -1,5 +1,6 @@
 %option noyywrap
 %x SSTATE
+%x COM
 %{
 #include<bits/stdc++.h>
 #include<stdlib.h>
@@ -60,6 +61,39 @@ NEWLINE \n
                 fout<<"Error at line "<<line2<<": Unterminated string "<< tex<<"\n\n";
                 error++;
                // line_count++;
+                BEGIN INITIAL;
+}
+
+\/\* {
+                BEGIN COM;
+                line2=line_count;
+                tex=yytext;
+                
+}
+<COM>(.|\n)*\*\/  {
+                tex+=yytext;
+                fout<<"Line no "<<line2<<": TOKEN <COMMENT> Lexeme "<<tex<<" found\n\n";
+                int ab=tex.size();
+                for (int i=0;i<ab;i++)
+                {
+                    if(tex[i]=='\n')line_count++;
+                }
+                 BEGIN INITIAL;               
+
+}
+<COM>[^\n\r]* {
+                st=(string)yytext+"\n";
+                tex+=st;
+}
+<COM><<EOF>> {
+                tex+=yytext;
+                fout<<"Error at line "<<line2<<": Unterminated comment "<< tex<<"\n\n";
+                error++;
+                int ab=tex.size();
+                for (int i=0;i<ab;i++)
+                {
+                    if(tex[i]=='\n')line_count++;
+                }
                 BEGIN INITIAL;
 }
 {NEWLINE} {line_count++;}
@@ -313,13 +347,7 @@ NEWLINE \n
                 fout<<"Line no "<<line_count<<": TOKEN <COMMENT> Lexeme "<<tex<<" found\n\n";
                 
 }
-\/\*(.|\n)*\*\/ {
-                fout<<"Line no "<<line_count<<": TOKEN <COMMENT> Lexeme "<<yytext<<" found\n\n";
-                for (int i=0;i<strlen(yytext);i++)
-                {
-                    if(yytext[i]=='\n')line_count++;
-                }
-}
+
 
 
 . {}
