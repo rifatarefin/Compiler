@@ -15,7 +15,9 @@ unsigned long hash2(string str)
 }
 int n=15;
 SymbolTable table(n);
-int count=0;
+SymbolInfo *idList[100];
+SymbolInfo *spec=new SymbolInfo((char *)"null", (char *)"ID");
+int ccnt=0;
 int yyparse(void);
 int yylex(void);
 
@@ -28,8 +30,11 @@ void yyerror(char *s)
 %}
 
 %union { double dval; int ivar ; char *sval;SymbolInfo *sym;}
-%token <sval> CHAR IF ELSE FOR WHILE INT FLOAT DOUBLE RETURN VOID MAIN PRINTLN ASSIGNOP NOT SEMICOLON COMMA LPAREN RPAREN LCURL RCURL LTHIRD RTHIRD INCOP DECOP CONST_CHAR 
-%token <sym> ADDOP MULOP RELOP LOGICOP CONST_INT CONST_FLOAT ID
+%token<ivar> CONST_CHAR
+%token <sval> CHAR IF ELSE FOR WHILE INT FLOAT DOUBLE RETURN VOID MAIN PRINTLN ASSIGNOP NOT SEMICOLON COMMA LPAREN RPAREN LCURL RCURL LTHIRD RTHIRD INCOP DECOP 
+%token <sym> ADDOP MULOP RELOP LOGICOP CONST_INT CONST_FLOAT ID 
+%type <dval> factor variable expression unary_expression term simple_expression rel_expression logic_expression 
+%type<sval> type_specifier
 
 
 %%
@@ -45,24 +50,48 @@ compound_statement : LCURL var_declaration statements RCURL                     
 
 			 
 var_declaration	: type_specifier declaration_list SEMICOLON                                             {cout<<"var_declaration	: type_specifier declaration_list SEMICOLON\n\n";
-                                                                                                                                                                            
+                                                                                                                                                                           
+                                                                                                                                                                            for(int i=0;i<ccnt;i++)
+                                                                                                                                                                            {
+                                                                                                                                                                            idList[i]->datatype=$1;
+                                                                                                                                                                            int hs=hash2(idList[i]->name);
+                                                                                                                                                                            table.insert(hs%n,idList[i]);
                                                                                                                                                                             }
-		|  var_declaration type_specifier declaration_list SEMICOLON                                      {cout<<"var_declaration: var_declaration type_specifier declaration_list SEMICOLON\n\n";}
+                                                                                                                                                                            ccnt=0;
+                                                                                                                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                            }
+		|  var_declaration type_specifier declaration_list SEMICOLON                                      {cout<<"var_declaration: var_declaration type_specifier declaration_list SEMICOLON\n\n";
+                                                                                                                                                                            
+                                                                                                                                                                            for(int i=0;i<ccnt;i++)
+                                                                                                                                                                            {
+                                                                                                                                                                            idList[i]->datatype=$2;
+                                                                                                                                                                            int hs=hash2(idList[i]->name);
+                                                                                                                                                                            table.insert(hs%n,idList[i]);
+                                                                                                                                                                            }
+                                                                                                                                                                            ccnt=0;
+                                                                                                                                                                            }
 		;
 
-type_specifier	: INT                                                                                                                                     {printf("type_specifier : INT\n\n");}
-		| FLOAT                                                                                                                                                       {printf("type_specifier : FLOAT\n\n");}
-		| CHAR                                                                                                                                                        {printf("type_specifier : CHAR\n\n");}
+type_specifier	: INT                                                                                                                                     {printf("type_specifier : INT\n\n");
+                                                                                                                                                                                $$=$1;
+                                                                                                                                                                                }
+		| FLOAT                                                                                                                                                       {printf("type_specifier : FLOAT\n\n");
+                                                                                                                                                                                $$=$1;
+                                                                                                                                                                                }
+		| CHAR                                                                                                                                                        {printf("type_specifier : CHAR\n\n");
+                                                                                                                                                                                $$=$1;
+                                                                                                                                                                                }
 		;
 			
 declaration_list : declaration_list COMMA ID                                                                                    {cout<<"declaration_list : declaration_list COMMA ID\n";
-                                                                                                                                                                                int hs=hash2($3->name)%n;
-                                                                                                                                                                                table.insert(hs,$3);
+                                                                                                                                                                                idList[ccnt++]=$3;
+                                                                                                                                                                               cout<<$3->name<<"\n\n";
                                                                                                                                                                                 }
 		 | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD                                                  {cout<<"declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD\n\n";}
+		 
 		 | ID                                                                                                                                                              {cout<<"declaration_list : ID\n";
-                                                                                                                                                                                int hs=hash2($1->name)%n;
-                                                                                                                                                                                table.insert(hs,$1);
+                                                                                                                                                                                idList[ccnt++]=$1;
+                                                                                                                                                                                cout<<$1->name<<"\n\n";
                                                                                                                                                                                 }
 		 | ID LTHIRD CONST_INT RTHIRD                                                                                                     {printf("declaration_list : ID LTHIRD CONST_INT RTHIRD\n\n");}
 		 ;
@@ -104,41 +133,96 @@ variable : ID 		                                                                
 	 | ID LTHIRD expression RTHIRD                                                                                                     {cout<<"variable : ID LTHIRD expression RTHIRD\n\n";};
 	 ;
 			
-expression : logic_expression	                                                                                                              {cout<<"expression : logic_expression\n\n";}
-	   | variable ASSIGNOP logic_expression 	                                                                                      {cout<<"expression : variable ASSIGNOP logic_expression\n\n";}
+expression : logic_expression	                                                                                                              {cout<<"expression : logic_expression\n\n";
+                                                                                                                                                                                $$=$1;
+                                                                                                                                                                                }
+	   | variable ASSIGNOP logic_expression 	                                                                                      {cout<<"expression : variable ASSIGNOP logic_expression\n\n";
+                                                                                                                                                                                $$=1;                                                                                                                       //********
+                                                                                                                                                                                }
 	   ;
 			
-logic_expression : rel_expression 	                                                                                                     {cout<<"logic_expression : rel_expression\n\n";}
-		 | rel_expression LOGICOP rel_expression 	                                                                               {cout<<"logic_expression : rel_expression LOGICOP rel_expression\n\n";}
+logic_expression : rel_expression 	                                                                                                     {cout<<"logic_expression : rel_expression\n\n";
+                                                                                                                                                                                $$=$1;
+                                                                                                                                                                                //cout<<$$<<"\n\n";
+                                                                                                                                                                                }
+		 | rel_expression LOGICOP rel_expression 	                                                                               {cout<<"logic_expression : rel_expression LOGICOP rel_expression\n\n";
+                                                                                                                                                                                if($2->name=="&&")$$=$1&&$3;
+                                                                                                                                                                                else if($2->name=="||")$$=$1||$3;
+                                                                                                                                                                                //cout<<$$<<"\n\n";
+                                                                                                                                                                                }
 		 ;
 			
-rel_expression	: simple_expression                                                                                                  {cout<<"rel_expression	: simple_expression\n\n";}
-		| simple_expression RELOP simple_expression                                                                   {cout<<"rel_expression : simple_expression RELOP simple_expression\n\n";}	
+rel_expression	: simple_expression                                                                                                  {cout<<"rel_expression	: simple_expression\n\n";
+                                                                                                                                                                            $$=$1;
+                                                                                                                                                                            }
+		| simple_expression RELOP simple_expression                                                                   {cout<<"rel_expression : simple_expression RELOP simple_expression\n\n";
+                                                                                                                                                                            if($2->name==">")$$=$1>$3;
+                                                                                                                                                                            else if($2->name=="<")$$=$1<$3;
+                                                                                                                                                                            else if($2->name==">=")$$=$1>=$3;
+                                                                                                                                                                            else if($2->name=="<=")$$=$1<=$3;
+                                                                                                                                                                            else if($2->name=="==")$$=$1==$3;
+                                                                                                                                                                            else if($2->name=="!=")$$=$1!=$3;
+                                                                                                                                                                            }	
 		;
 				
-simple_expression : term                                                                                                                        {cout<<"simple_expression : term \n\n";}
-		  | simple_expression ADDOP term                                                                                              {cout<<"simple_expression : simple_expression ADDOP term \n\n";}
+simple_expression : term                                                                                                                        {cout<<"simple_expression : term \n\n";
+                                                                                                                                                                            $$=$1;
+                                                                                                                                                                            }
+		  | simple_expression ADDOP term                                                                                              {cout<<"simple_expression : simple_expression ADDOP term \n\n";
+                                                                                                                                                                            if($2->name=="+")$$=$1+$3;
+                                                                                                                                                                            else $$=$1-$3;
+                                                                                                                                                                            }
 		  ;
 					
-term :	unary_expression                                                                                                                     {cout<<"term :	unary_expression\n\n";}
-     |  term MULOP unary_expression                                                                                                   {cout<<"term : term MULOP unary_expression\n\n";}
+term :	unary_expression                                                                                                                     {cout<<"term :	unary_expression\n\n";
+                                                                                                                                                                            $$=$1;
+                                                                                                                                                                            }
+     |  term MULOP unary_expression                                                                                                   {cout<<"term : term MULOP unary_expression\n\n";
+                                                                                                                                                                            if($2->name=="*")$$=$1*$3;
+                                                                                                                                                                            else if($2->name=="/")$$=$1/$3;
+                                                                                                                                                                            else if($2->name=="%")
+                                                                                                                                                                            {
+                                                                                                                                                                            if($1==(int)$1 && $3==(int)$3)$$=(int)$1%(int)$3;
+                                                                                                                                                                            else cout<<"Error! invalid operand\n\n";
+                                                                                                                                                                            }
+                                                                                                                                                                            }
      ;
 
-unary_expression : ADDOP unary_expression                                                                           {cout<<"unary_expression : ADDOP unary_expression\n\n";}
-		 | NOT unary_expression                                                                                                               {cout<<"unary_expression : NOT unary_expression\n\n";}
-		 | factor                                                                                                                                                    {cout<<"unary_expression : factor\n\n";}
+unary_expression : ADDOP unary_expression                                                                           {cout<<"unary_expression : ADDOP unary_expression\n\n";
+                                                                                                                                                                        if($1->name=="-")$$=-$2;
+                                                                                                                                                                        else $$=$2;
+                                                                                                                                                                        }
+		 | NOT unary_expression                                                                                                               {cout<<"unary_expression : NOT unary_expression\n\n";
+                                                                                                                                                                        if($2==0)$$=1;
+                                                                                                                                                                        else $$=0;
+                                                                                                                                                                        }
+		 | factor                                                                                                                                                    {cout<<"unary_expression : factor\n\n";
+                                                                                                                                                                            $$=$1;
+                                                                                                                                                                            }
 		 ;
 	
-factor	: variable                                                                                                                                       {cout<<"factor	: variable\n\n";}
-	| LPAREN expression RPAREN                                                                                                         {cout<<"factor : expression RPAREN\n\n";}
+factor	: variable                                                                                                                                       {cout<<"factor	: variable\n\n";
+                                                                                                                                                                            $$=$1;}
+	| LPAREN expression RPAREN                                                                                                         {cout<<"factor : LPAREN expression RPAREN\n\n";
+                                                                                                                                                                            $$=$2;
+                                                                                                                                                                            }
 	| CONST_INT                                                                                                                                        {cout<<"factor : CONST_INT\n";
                                                                                                                                                                         cout<<$1->name<<"\n\n";
+                                                                                                                                                                        $$=atoi($1->name.c_str());
                                                                                                                                                                     }
-	| CONST_FLOAT                                                                                                                                  {cout<<"factor : CONST_FLOAT\n\n";}
-	| CONST_CHAR                                                                                                                                   {cout<<"factor : CONST_CHAR\n\n";}
-	| factor INCOP                                                                                                                                     {cout<<"factor : factor INCOP\n\n";
+	| CONST_FLOAT                                                                                                                                  {cout<<"factor : CONST_FLOAT\n\n";
+                                                                                                                                                                        $$=atof($1->name.c_str());
+                                                                                                                                                                        cout<<$1->name<<"\n\n";
                                                                                                                                                                         }
-	| factor DECOP                                                                                                                                     {{cout<<"factor : factor DECOP\n\n";}}
+	| CONST_CHAR                                                                                                                                   {cout<<"factor : CONST_CHAR\n\n";
+                                                                                                                                                                        $$=$1;
+                                                                                                                                                                        }
+	| factor INCOP                                                                                                                                     {cout<<"factor : factor INCOP\n\n";
+                                                                                                                                                                        $$=$1+1;
+                                                                                                                                                                        }
+	| factor DECOP                                                                                                                                     {cout<<"factor : factor DECOP\n\n";
+                                                                                                                                                                        $$=$1-1;
+                                                                                                                                                                            }
 	;
 
 
@@ -147,7 +231,7 @@ factor	: variable                                                               
 
 int main(void){
 	/*yydebug=1;*/
-	
+    freopen("input1.txt","r",stdin);
 	yyparse();
 	return 0;
 }
