@@ -33,9 +33,9 @@ void yyerror(char *s)
 %token<ivar> CONST_CHAR
 %token <sval> CHAR IF ELSE FOR WHILE INT FLOAT DOUBLE RETURN VOID MAIN PRINTLN ASSIGNOP NOT SEMICOLON COMMA LPAREN RPAREN LCURL RCURL LTHIRD RTHIRD INCOP DECOP 
 %token <sym> ADDOP MULOP RELOP LOGICOP CONST_INT CONST_FLOAT ID 
-%type <dval> factor variable expression unary_expression term simple_expression rel_expression logic_expression 
+%type <dval> factor expression unary_expression term simple_expression rel_expression logic_expression 
 %type<sval> type_specifier
-
+%type<sym>variable
 
 %%
 
@@ -87,13 +87,23 @@ declaration_list : declaration_list COMMA ID                                    
                                                                                                                                                                                 idList[ccnt++]=$3;
                                                                                                                                                                                cout<<$3->name<<"\n\n";
                                                                                                                                                                                 }
-		 | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD                                                  {cout<<"declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD\n\n";}
+		 | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD                                                  {cout<<"declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD\n\n";
+                                                                                                                                                                                $3->arrLen=atoi($5->name.c_str());
+                                                                                                                                                                                $3->val_array=new double[$3->arrLen];
+                                                                                                                                                                                idList[ccnt++]=$3;
+                                                                                                                                                                                cout<<$3->name<<"\n\n";
+                                                                                                                                                                                }
 		 
 		 | ID                                                                                                                                                              {cout<<"declaration_list : ID\n";
                                                                                                                                                                                 idList[ccnt++]=$1;
                                                                                                                                                                                 cout<<$1->name<<"\n\n";
                                                                                                                                                                                 }
-		 | ID LTHIRD CONST_INT RTHIRD                                                                                                     {printf("declaration_list : ID LTHIRD CONST_INT RTHIRD\n\n");}
+		 | ID LTHIRD CONST_INT RTHIRD                                                                                                     {printf("declaration_list : ID LTHIRD CONST_INT RTHIRD\n\n");
+                                                                                                                                                                                $1->arrLen=atoi($3->name.c_str());
+                                                                                                                                                                                $1->val_array=new double[$1->arrLen];
+                                                                                                                                                                                idList[ccnt++]=$1;
+                                                                                                                                                                                cout<<$1->name<<"\n\n";
+                                                                                                                                                                                }
 		 ;
 
 statements : stmt                                                                                                                                           {cout<<"statements : stmt\n\n";}
@@ -129,15 +139,41 @@ expression_statement	: SEMICOLON			                                             
 			| expression SEMICOLON                                                                                                           {cout<<"expression_statement : expression SEMICOLON\n\n";}
 			;
 						
-variable : ID 		                                                                                                                                           {cout<<"variable : ID\n\n";}
-	 | ID LTHIRD expression RTHIRD                                                                                                     {cout<<"variable : ID LTHIRD expression RTHIRD\n\n";};
+variable : ID 		                                                                                                                                           {cout<<"variable : ID\n\n";
+                                                                                                                                                                            SymbolInfo *f;
+                                                                                                                                                                            int hs=hash2($1->name);
+                                                                                                                                                                            f=table.lookUp(hs%n,$1);
+                                                                                                                                                                            if(f==0)cout<<"Error! "<<$1->name<<" not declared in the scope\n\n";
+                                                                                                                                                                            $$=f;
+                                                                                                                                                                            }
+	 | ID LTHIRD expression RTHIRD                                                                                                     {cout<<"variable : ID LTHIRD expression RTHIRD\n\n";
+                                                                                                                                                                            SymbolInfo *f;
+                                                                                                                                                                            int hs=hash2($1->name);
+                                                                                                                                                                            f=table.lookUp(hs%n,$1);
+                                                                                                                                                                            if(f==0)cout<<"Error! "<<$1->name<<" not declared in the scope\n\n";
+                                                                                                                                                                            f->index=$3;
+                                                                                                                                                                            $$=f;
+                                                                                                                                                                                                    
+                                                                                                                                                                                                 
+                                                                                                                                                                        };
 	 ;
 			
 expression : logic_expression	                                                                                                              {cout<<"expression : logic_expression\n\n";
                                                                                                                                                                                 $$=$1;
                                                                                                                                                                                 }
 	   | variable ASSIGNOP logic_expression 	                                                                                      {cout<<"expression : variable ASSIGNOP logic_expression\n\n";
-                                                                                                                                                                                $$=1;                                                                                                                       //********
+                                                                                                                                                                                $$=1;                                                                                                                       
+                                                                                                                                                                                SymbolInfo *f;
+                                                                                                                                                                                int hs=hash2($1->name);
+                                                                                                                                                                                f=table.lookUp(hs%n,$1);
+                                                                                                                                                                                if(f!=0)
+                                                                                                                                                                                {
+                                                                                                                                                                                    cout<<f->index<<"\n";
+                                                                                                                                                                                    if(f->index==-1){ f->value=$3;}
+                                                                                                                                                                                    else { f->val_array[f->index]=$3;}
+                                                                                                                                                                                    table.print(n);
+                                                                                                                                                                                }
+                                                                                                                                                                                else cout<<"Error! "<<$1->name<<" not found\n\n";
                                                                                                                                                                                 }
 	   ;
 			
@@ -202,7 +238,7 @@ unary_expression : ADDOP unary_expression                                       
 		 ;
 	
 factor	: variable                                                                                                                                       {cout<<"factor	: variable\n\n";
-                                                                                                                                                                            $$=$1;}
+                                                                                                                                                                            $$=$1->value;}
 	| LPAREN expression RPAREN                                                                                                         {cout<<"factor : LPAREN expression RPAREN\n\n";
                                                                                                                                                                             $$=$2;
                                                                                                                                                                             }
