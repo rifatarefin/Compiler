@@ -14,7 +14,7 @@ unsigned long hash2(string str)
 
     return hash;
 }
-int n=15;
+int n=15, err=0;double tLine;extern int line_count;
 SymbolTable table(n);
 SymbolInfo *idList[100];
 SymbolInfo *spec=new SymbolInfo((char *)"null", (char *)"ID");
@@ -40,7 +40,8 @@ void yyerror(char *s)
 
 %%
 
-Program : INT MAIN LPAREN RPAREN compound_statement                                                     {cout<<"Program : INT MAIN LPAREN RPAREN compound_statement\n\n";}
+Program : INT MAIN LPAREN RPAREN compound_statement                                                     {cout<<"Program : INT MAIN LPAREN RPAREN compound_statement\n\n";
+                                                                                                                                                                                        }
 	;
 
 
@@ -59,6 +60,7 @@ var_declaration	: type_specifier declaration_list SEMICOLON                     
                                                                                                                                                                             table.insert(hs%n,idList[i]);
                                                                                                                                                                             }
                                                                                                                                                                             ccnt=0;
+
                                                                                                                                                                                                                                                                                                                                                                                                                                     
                                                                                                                                                                             }
 		|  var_declaration type_specifier declaration_list SEMICOLON                                      {cout<<"var_declaration: var_declaration type_specifier declaration_list SEMICOLON\n\n";
@@ -144,18 +146,23 @@ variable : ID 		                                                                
                                                                                                                                                                             SymbolInfo *f;
                                                                                                                                                                             int hs=hash2($1->name);
                                                                                                                                                                             f=table.lookUp(hs%n,$1);
-                                                                                                                                                                            if(f==0)cout<<"Error! "<<$1->name<<" not declared in the scope\n\n";
-                                                                                                                                                                            $$=f;
-                                                                                                                                                                            cout<<$$->name<<"\n\n";
+                                                                                                                                                                            if(f==0){cout<<"Error! at line "<<$1->line<<": "<<$1->name<<" not declared in the scope\n\n";err++;}
+                                                                                                                                                                            else     {cout<<$$->name<<"\n\n"; $$=f;$$->line=$1->line;}
+                                                                                                                                                                            
+                                                                                                                                                                           
                                                                                                                                                                             }
 	 | ID LTHIRD expression RTHIRD                                                                                                     {cout<<"variable : ID LTHIRD expression RTHIRD\n";
                                                                                                                                                                             SymbolInfo *f;
                                                                                                                                                                             int hs=hash2($1->name);
                                                                                                                                                                             f=table.lookUp(hs%n,$1);
-                                                                                                                                                                            if(f==0)cout<<"Error! "<<$1->name<<" not declared in the scope\n\n";
-                                                                                                                                                                            f->index=$3;
+                                                                                                                                                                            if(f==0){cout<<"Error! at line "<<$1->line<<": "<<$1->name<<" not declared in the scope\n\n";err++;}
+                                                                                                                                                                            cout<<$1->name<<"\n";
+                                                                                                                                                                           if($3<f->arrLen)
+                                                                                                                                                                           {
+                                                                                                                                                                           f->index=$3;
                                                                                                                                                                             $$=f;
-                                                                                                                                                                            cout<<$$->name<<"\n\n";
+                                                                                                                                                                            }
+                                                                                                                                                                            else {cout<<"Error! at line "<<$1->line<<": "<<"array index out of bound\n\n";err++;}
                                                                                                                                                                                                  
                                                                                                                                                                         };
 	 ;
@@ -168,14 +175,21 @@ expression : logic_expression	                                                  
                                                                                                                                                                                 SymbolInfo *f;
                                                                                                                                                                                 int hs=hash2($1->name);
                                                                                                                                                                                 f=table.lookUp(hs%n,$1);
-                                                                                                                                                                                if(f!=0)
+                                                                                                                                                                                
+                                                                                                                                                                                if(f!=0 && $3!=-9999999)
                                                                                                                                                                                 {
-                                                                                                                                                                                    
-                                                                                                                                                                                    if(f->index==-1){ f->value=$3;}
-                                                                                                                                                                                    else { f->val_array[f->index]=$3;}
-                                                                                                                                                                                    table.print(n);
+                                                                                                                                                                            if($3!=(int)$3 && (f->datatype.compare(0,3,"int") == 0 || f->datatype.compare(0,4,"char") == 0 ))
+                                                                                                                                                                                    {
+                                                                                                                                                                                        cout<<"Error! at line "<<$1->line<<": "<<"type mismatch\n\n";
+                                                                                                                                                                                        err++;
+                                                                                                                                                                                    }
+                                                                                                                                                                                else if(f->arrLen>-1 && f->index==-1 ) 
+                                                                                                                                                                                                {cout<<"Error! at line "<<$1->line<<": "<<"type mismatch\n\n";err++;}
+                                                                                                                                                                                   else  if(f->index==-1){ f->value=$3; table.print(n);}
+                                                                                                                                                                                    else { f->val_array[f->index]=$3; table.print(n);}
+                                                                                                                                                                                   
                                                                                                                                                                                 }
-                                                                                                                                                                                else cout<<"Error! "<<$1->name<<" not found\n\n";
+                                                                                                                                                                               // else cout<<"Error! "<<$1->name<<" not found\n\n";
                                                                                                                                                                                 }
 	   ;
 			
@@ -221,7 +235,8 @@ term :	unary_expression                                                         
                                                                                                                                                                             else if($2->name=="%")
                                                                                                                                                                             {
                                                                                                                                                                             if($1==(int)$1 && $3==(int)$3)$$=(int)$1%(int)$3;
-                                                                                                                                                                            else cout<<"Error! invalid operand\n\n";
+                                                                                                                                                                            else  {cout<<"Error! at line "<<$2->line<<": "<<"invalid operand on modulus operation\n\n";$$=-9999999;
+                                                                                                                                                                            err++;}
                                                                                                                                                                             }
                                                                                                                                                                             }
      ;
@@ -271,6 +286,9 @@ factor	: variable                                                               
 int main(void){
 	/*yydebug=1;*/
     freopen("input.txt","r",stdin);
+    freopen("op.txt","w",stdout);
 	yyparse();
+	table.print(n);
+	cout<<"\nTotal errors: "<<err<<"\n\n"<<"Total lines:  "<<line_count<<"\n\n";
 	return 0;
 }
