@@ -1,6 +1,7 @@
 %{
 #include <stdlib.h>
 #include <stdio.h>
+#include<bits/stdc++.h>
 #include "symboltable.h"
 ofstream fout;
 unsigned long hash2(string str)
@@ -87,7 +88,7 @@ declaration_list : declaration_list COMMA ID                                    
                                                                                                                                                                                 idList[ccnt++]=$3;
                                                                                                                                                                                cout<<$3->name<<"\n\n";
                                                                                                                                                                                 }
-		 | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD                                                  {cout<<"declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD\n\n";
+		 | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD                                                  {cout<<"declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD\n";
                                                                                                                                                                                 $3->arrLen=atoi($5->name.c_str());
                                                                                                                                                                                 $3->val_array=new double[$3->arrLen];
                                                                                                                                                                                 idList[ccnt++]=$3;
@@ -98,7 +99,7 @@ declaration_list : declaration_list COMMA ID                                    
                                                                                                                                                                                 idList[ccnt++]=$1;
                                                                                                                                                                                 cout<<$1->name<<"\n\n";
                                                                                                                                                                                 }
-		 | ID LTHIRD CONST_INT RTHIRD                                                                                                     {printf("declaration_list : ID LTHIRD CONST_INT RTHIRD\n\n");
+		 | ID LTHIRD CONST_INT RTHIRD                                                                                                     {printf("declaration_list : ID LTHIRD CONST_INT RTHIRD\n");
                                                                                                                                                                                 $1->arrLen=atoi($3->name.c_str());
                                                                                                                                                                                 $1->val_array=new double[$1->arrLen];
                                                                                                                                                                                 idList[ccnt++]=$1;
@@ -139,21 +140,22 @@ expression_statement	: SEMICOLON			                                             
 			| expression SEMICOLON                                                                                                           {cout<<"expression_statement : expression SEMICOLON\n\n";}
 			;
 						
-variable : ID 		                                                                                                                                           {cout<<"variable : ID\n\n";
+variable : ID 		                                                                                                                                           {cout<<"variable : ID\n";
                                                                                                                                                                             SymbolInfo *f;
                                                                                                                                                                             int hs=hash2($1->name);
                                                                                                                                                                             f=table.lookUp(hs%n,$1);
                                                                                                                                                                             if(f==0)cout<<"Error! "<<$1->name<<" not declared in the scope\n\n";
                                                                                                                                                                             $$=f;
+                                                                                                                                                                            cout<<$$->name<<"\n\n";
                                                                                                                                                                             }
-	 | ID LTHIRD expression RTHIRD                                                                                                     {cout<<"variable : ID LTHIRD expression RTHIRD\n\n";
+	 | ID LTHIRD expression RTHIRD                                                                                                     {cout<<"variable : ID LTHIRD expression RTHIRD\n";
                                                                                                                                                                             SymbolInfo *f;
                                                                                                                                                                             int hs=hash2($1->name);
                                                                                                                                                                             f=table.lookUp(hs%n,$1);
                                                                                                                                                                             if(f==0)cout<<"Error! "<<$1->name<<" not declared in the scope\n\n";
                                                                                                                                                                             f->index=$3;
                                                                                                                                                                             $$=f;
-                                                                                                                                                                                                    
+                                                                                                                                                                            cout<<$$->name<<"\n\n";
                                                                                                                                                                                                  
                                                                                                                                                                         };
 	 ;
@@ -168,7 +170,7 @@ expression : logic_expression	                                                  
                                                                                                                                                                                 f=table.lookUp(hs%n,$1);
                                                                                                                                                                                 if(f!=0)
                                                                                                                                                                                 {
-                                                                                                                                                                                    cout<<f->index<<"\n";
+                                                                                                                                                                                    
                                                                                                                                                                                     if(f->index==-1){ f->value=$3;}
                                                                                                                                                                                     else { f->val_array[f->index]=$3;}
                                                                                                                                                                                     table.print(n);
@@ -229,8 +231,7 @@ unary_expression : ADDOP unary_expression                                       
                                                                                                                                                                         else $$=$2;
                                                                                                                                                                         }
 		 | NOT unary_expression                                                                                                               {cout<<"unary_expression : NOT unary_expression\n\n";
-                                                                                                                                                                        if($2==0)$$=1;
-                                                                                                                                                                        else $$=0;
+                                                                                                                                                                        $$=!$2;
                                                                                                                                                                         }
 		 | factor                                                                                                                                                    {cout<<"unary_expression : factor\n\n";
                                                                                                                                                                             $$=$1;
@@ -238,7 +239,9 @@ unary_expression : ADDOP unary_expression                                       
 		 ;
 	
 factor	: variable                                                                                                                                       {cout<<"factor	: variable\n\n";
-                                                                                                                                                                            $$=$1->value;}
+                                                                                                                                                                            if($1->index==-1)$$=$1->value;
+                                                                                                                                                                            else $$=$1->val_array[$1->index];
+                                                                                                                                                                            }
 	| LPAREN expression RPAREN                                                                                                         {cout<<"factor : LPAREN expression RPAREN\n\n";
                                                                                                                                                                             $$=$2;
                                                                                                                                                                             }
@@ -267,7 +270,7 @@ factor	: variable                                                               
 
 int main(void){
 	/*yydebug=1;*/
-    freopen("input1.txt","r",stdin);
+    freopen("input.txt","r",stdin);
 	yyparse();
 	return 0;
 }
